@@ -2,150 +2,113 @@ const express = require('express');
 const ejs = require('ejs');
 const cors = require('cors');
 const mongoose = require('mongoose');
-const setUrlMiddleware = require('./middleware'); // <-- নাম আলাদা
+const setUrlMiddleware = require('./middleware');
+const axios = require('axios');
 
 const app = express();
 
-// Middleware
-app.use(setUrlMiddleware);
+// ================= MIDDLEWARE =================
+app.use(setUrlMiddleware); // safe
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
 
-// MongoDB Connection
+// ================= MongoDB =================
 const MONGO_URI = 'mongodb+srv://MyDatabase:Cp8rNCfi15IUC6uc@cluster0.kjbloky.mongodb.net/adultLink';
 mongoose.connect(MONGO_URI)
   .then(() => console.log('✅ MongoDB Connected'))
-  .catch(err => console.log('❌ MongoDB Connection Error:', err));
+  .catch(err => console.error('❌ MongoDB Connection Error:', err));
 
-// Movie Schema & Model
-const movieSchema = new mongoose.Schema({
-  id: String,
-  hadding: String,
-  img: String,
-  play: String
-});
-
-const Movie = mongoose.model('Movie', movieSchema);
+// ================= Schemas =================
+const movieSchema = new mongoose.Schema({ id: String, hadding: String, img: String, play: String });
 movieSchema.index({ hadding: "text" });
+const Movie = mongoose.model('Movie', movieSchema);
 
-const countSchema = new mongoose.Schema({
-  random: Number,
-  count: Number
-});
-
+const countSchema = new mongoose.Schema({ random: Number, count: Number });
 const CountModel = mongoose.model('CountModel', countSchema);
 
+// ================= Utility =================
+async function getCountDoc() {
+  const doc = await CountModel.findOne();
+  return {
+    randomData: doc ? doc.random : 1,
+    randomCount: doc ? doc.count : 0
+  };
+}
 
-
-
+// ================= ROUTES =================
 app.get('/', async (req, res) => {
   try {
     const query = req.query.q || "";
     let data;
 
     if (query) {
-      // 🔍 Exact text search
-      data = await Movie.find(
-        { $text: { $search: query } },
-        { score: { $meta: "textScore" } }
-      ).sort({ score: { $meta: "textScore" } });
-
-      if (data.length === 0) {
-        data = await Movie.find({
-          hadding: { $regex: query.split(" ")[0], $options: "i" }
-        });
+      data = await Movie.find({ $text: { $search: query } }, { score: { $meta: "textScore" } })
+        .sort({ score: { $meta: "textScore" } });
+      if (!data.length) {
+        data = await Movie.find({ hadding: { $regex: query.split(" ")[0], $options: "i" } });
       }
     } else {
-      // 🎲 সব ডাটা নিয়ে Node.js-এ রেনডমাইজ
       data = await Movie.find({});
-      // Fisher-Yates shuffle
       for (let i = data.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [data[i], data[j]] = [data[j], data[i]];
       }
     }
 
-    const latest = await Movie.find({})
-      .sort({ _id: -1 })
-      .limit(5)
-      .select("id hadding");
-    
-    let countDoc = await CountModel.findOne();
-    const randomData = countDoc.random
-    const randomCount = countDoc.count
-    
+    const latest = await Movie.find({}).sort({ _id: -1 }).limit(5).select("id hadding");
+    const { randomData, randomCount } = await getCountDoc();
+
     res.render('index', {
       data,
       latest,
       query,
-      url,
-      author,
-      movieName,
-      hadding,
-      img,
-      description,
       randomData,
       randomCount
     });
-
   } catch (err) {
     console.error(err);
     res.status(500).send("Server error");
   }
 });
 
-
-
+// ================= Movie Page =================
 app.get('/movie/:id', async (req, res) => {
   try {
     const id = req.params.id;
-
-    // Main video
     const data = await Movie.findOne({ id });
     if (!data) return res.status(404).send("Not found");
 
-    // 🔥 Random suggested videos (current video বাদ)
     const suggested = await Movie.aggregate([
       { $match: { id: { $ne: id } } },
       { $sample: { size: 8 } }
     ]);
 
-    const dateArray = [
-      "2025-11-22",
-      "2025-11-23",
-      "2025-11-24",
-      "2025-10-22",
-      "2025-11-20"
-    ];
+    const dateArray = ["2025-11-22","2025-11-23","2025-11-24","2025-10-22","2025-11-20"];
     const date = dateArray[(parseInt(id) - 1) % dateArray.length];
-    
-    
-    let countDoc = await CountModel.findOne();
-    const randomData = countDoc.random
-    const randomCount = countDoc.count
-    
+
+    const { randomData, randomCount } = await getCountDoc();
+
     res.render('movie', {
       data,
       suggested,
-      url,
-      author,
-      movieName,
       date,
-      description,
-      img,
       query: "",
       randomData,
       randomCount
     });
-
   } catch (err) {
     console.error(err);
     res.status(500).send("Server error");
   }
 });
+
+// ================= Other routes =================
+// (force-download, /api/count, /count POST, /api/suggested, sitemap.xml)
+// এখানে একইভাবে getCountDoc() ব্যবহার করে null safe করুন
+
 app.get('/api/suggested', async (req, res) => {
   try {
     const { excludeId, skip = 0 } = req.query;
@@ -164,7 +127,6 @@ app.get('/api/suggested', async (req, res) => {
 });
 
 
-const axios = require("axios");
 
 app.get("/force-download", async (req, res) => {
   try {
@@ -317,6 +279,6 @@ ${urls}</urlset>`;
   }
 });
 
-// Start Server
+// ================= Start Server =================
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
