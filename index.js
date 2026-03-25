@@ -1,4 +1,5 @@
 const express = require('express');
+const ejs = require('ejs');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const setUrlMiddleware = require('./middleware'); // <-- নাম আলাদা
