@@ -221,14 +221,14 @@ app.get('/test', (req, res) => {
 
 app.get('/sitemap.xml', async (req, res) => {
   try {
-    const baseUrl = url;
-    const movies = await Movie.find({}).lean();
+    // 🔑 Use req.headers.host to get base URL dynamically
+    const baseUrl = `https://${req.headers.host}`;
 
+    const movies = await Movie.find({}).lean();
     console.log("Movies found:", movies.length);
 
     res.set('Content-Type', 'application/xml');
 
-    // 🔒 XML Escape Function (NEW)
     const escapeXml = (unsafe) => {
       return String(unsafe)
         .replace(/&/g, "&amp;")
@@ -238,7 +238,6 @@ app.get('/sitemap.xml', async (req, res) => {
         .replace(/'/g, "&apos;");
     };
 
-    // Home page
     let urls = `
   <url>
     <loc>${escapeXml(baseUrl)}</loc>
@@ -247,37 +246,38 @@ app.get('/sitemap.xml', async (req, res) => {
   </url>
 `;
 
-    // Movies pages
     movies.forEach(movie => {
-      if (movie.id) {
-
-        // 🔒 encode URI safely (NEW)
-        const safeUrl = escapeXml(
-          encodeURI(`${baseUrl}/movie/${movie.id}`)
-        );
-
-        urls += `
+      try {
+        if (movie.id && typeof movie.id === "string") {
+          const safeUrl = escapeXml(`${baseUrl}/movie/${encodeURIComponent(movie.id.trim())}`);
+          urls += `
   <url>
     <loc>${safeUrl}</loc>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
 `;
+        } else {
+          console.log("Skipping invalid movie ID:", movie.id);
+        }
+      } catch (e) {
+        console.log("Error processing movie:", movie, e);
       }
     });
 
-    // Final XML
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${urls}</urlset>`;
+${urls}
+</urlset>`;
 
     res.send(xml);
 
   } catch (error) {
     console.error("Sitemap error:", error);
-    res.status(500).send("Error generating sitemap");
+    res.status(500).send("Error generating sitemap: " + error.message);
   }
 });
+
 
 // ================= Start Server =================
 const PORT = process.env.PORT || 3000;
