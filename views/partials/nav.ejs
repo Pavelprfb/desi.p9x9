@@ -1,0 +1,117 @@
+
+  <!-- Font Awesome CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
+  <style>
+    /* Basic Reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+
+    /* Navbar */
+    nav {
+      width: 100%;
+      position: fixed;
+      top: 0;
+      left: 0;
+      background-color: black; /* translucent dark */
+      color: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 2rem;
+      z-index: 1000;
+      box-shadow: 0 2px 6px gray;
+    }
+
+    nav .logo {
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: #fff;
+      text-decoration: none;
+    }
+
+    nav ul {
+      list-style: none;
+      display: flex;
+      gap: 1.5rem;
+    }
+
+    nav ul li a {
+      color: #fff;
+      text-decoration: none;
+      font-size: 1rem;
+      transition: color 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    nav ul li a:hover {
+      color: #ff4d4d;
+    }
+
+    /* Responsive toggle button */
+    .menu-toggle {
+      display: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    @media (max-width: 768px) {
+      nav ul {
+        position: fixed;
+        top: 60px;
+        right: -100%;
+        background-color: rgba(0,0,0,0.95);
+        flex-direction: column;
+        width: 200px;
+        padding: 1rem;
+        gap: 1rem;
+        transition: right 0.3s ease;
+        height: calc(100% - 60px);
+      }
+      nav ul.active {
+        right: 0;
+      }
+      .menu-toggle {
+        display: block;
+      }
+    }
+
+    /* Push content down so navbar doesn't overlap */
+    .content {
+      padding-top: 70px;
+      text-align: center;
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav>
+    <a href="/" class="logo">Desi.P9X9</a>
+    <div class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></div>
+    <ul id="navLinks">
+      <li><a href="/"><i class="fas fa-home"></i> Home</a></li>
+      <li><a href="/l"><i class="fas fa-video"></i> Videos</a></li>
+      <li><a href="https://bd.p9x9.com/pages/about"><i class="fas fa-info-circle"></i> About</a></li>
+      <li><a href="https://bd.p9x9.com/pages/contact"><i class="fas fa-envelope"></i> Contact</a></li>
+    </ul>
+  </nav>
+
+
+  <script>
+    // Responsive Menu Toggle
+    const menuToggle = document.getElementById('menuToggle');
+    const navLinks = document.getElementById('navLinks');
+
+    menuToggle.addEventListener('click', () => {
+      navLinks.classList.toggle('active');
+    });
+  </script>
