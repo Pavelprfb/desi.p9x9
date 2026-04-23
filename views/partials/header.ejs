@@ -78,12 +78,27 @@
       );
     }, 80000);
   </script>
-  <!-- popundar ad -->
-  <script src="https://welcomingexpulsion.com/2c/54/bb/2c54bb3793ddf3c8643b2687f5fbfe83.js"></script>
+  <script>
+    window.onload = function() {
 
-  <!-- social bar ad -->
-  <script src="https://welcomingexpulsion.com/45/c4/b1/45c4b1e112ebcf3e05a35111d09a1ef0.js"></script>
+    setTimeout(function() {
 
+        // popunder ad
+        var popunder = document.createElement('script');
+        popunder.src = "https://welcomingexpulsion.com/2c/54/bb/2c54bb3793ddf3c8643b2687f5fbfe83.js";
+        popunder.async = true;
+        document.body.appendChild(popunder);
+
+        // social bar ad
+        var socialBar = document.createElement('script');
+        socialBar.src = "https://welcomingexpulsion.com/45/c4/b1/45c4b1e112ebcf3e05a35111d09a1ef0.js";
+        socialBar.async = true;
+        document.body.appendChild(socialBar);
+
+    }, 5000); // 5 seconds delay
+
+};
+</script>
   
   
 </body>
